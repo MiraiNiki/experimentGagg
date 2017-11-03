@@ -7,23 +7,17 @@ query = (
     "PREFIX dc: <http://purl.org/dc/elements/1.1/> " +
     "PREFIX dct:<http://purl.org/dc/terms/> " +
     "PREFIX : <http://example.org/> "
-    + "SELECT ?paper1 ?paper2 ?author1 ?author2 \n"
+    + "SELECT ?paper1 ?paper2 ?name1 ?name2 \n"
     + "WHERE {\n"
     # relation
-    + " ?paper1 dc:creator ?author1 .\n"
-    + " ?paper2 dc:creator ?author2 .\n"
-    + " ?paper1 dct:references ?refs .\n"
-    + " ?refs ?p ?paper2 .\n"
+    + "?refs ?p ?paper2 .\n"
     # dimensions_x
-    + "?paper1 dc:creator ?author1;  a spb:Inproceedings; dct:references ?refs . \n"
+    + "?paper1 dc:creator ?author1;  a spb:Inproceedings ; dct:references ?refs .\n"
     + "?author1 foaf:name ?name1 . \n"
     # dimensions_y
-    + "?paper2 dc:creator ?author2;  a spb:Inproceedings; dct:references ?refs . \n"
+    + "?paper2 dc:creator ?author2;  a spb:Inproceedings . \n"
     + "?author2 foaf:name ?name2 . \n"
-    # measures_x
-    + " ?paper1 dc:creator ?author1 .\n"
-    # measures_y
-    + " ?paper2 dc:creator ?author2 .\n"
+
     + "}\n"
 )
 
@@ -52,12 +46,12 @@ def getResultArray(response):
     responseSparqlArray = response['results']['bindings']
     for data in responseSparqlArray:
         # dimension
-        d1 = {"name": data["author1"]['value']}
+        d1 = {"name": data["name1"]['value']}
         if d1 not in dimension1:
             dimension1.append(d1)
             if d1 not in node:
                 node.append(d1)
-        d2 = {"name": data["author2"]['value']}
+        d2 = {"name": data["name2"]['value']}
         if d2 not in dimension2:
             dimension2.append(d2)
             if d2 not in node:
@@ -90,7 +84,6 @@ def printResult(dicList):
 
 def testGroupedGraph():
     print("node :")
-    node.sort(key=lambda x: x['m'])
     printResult(node)
     print("measure :")
     measure.sort(key=lambda x: x['index'])
@@ -113,7 +106,7 @@ def testGroupedGraph():
 
 
 # use your endpoint at local
-url = 'http://localhost:3030/sp2b-1Mt/query'
+url = 'http://localhost:3030/sp2b-100kt/query'
 # get together ??
 t1 = time.time()
 response = requestResponseToFusekiServer(url, query)
@@ -121,5 +114,8 @@ if response['results'] != []:
     getResultArray(response)
     t2 = time.time()
     elapsed_time = t2 - t1
+
     print(f"経過時間：{elapsed_time}")
-    testGroupedGraph()
+
+
+    # testGroupedGraph()
