@@ -7,17 +7,12 @@ query = (
     "PREFIX dc: <http://purl.org/dc/elements/1.1/> " +
     "PREFIX dct:<http://purl.org/dc/terms/> " +
     "PREFIX : <http://example.org/> "
-    + "SELECT ?paper1 ?paper2 ?name1 ?name2 \n"
+    + "SELECT ?paper1 ?name1 ?name2 \n"
     + "WHERE {\n"
-    # relation
-    + "?refs ?p ?paper2 .\n"
-    # dimensions_x
-    + "?paper1 dc:creator ?author1;  a spb:Inproceedings ; dct:references ?refs .\n"
+    + "?paper1 dc:creator ?author1;  a spb:Inproceedings ; dc:creator ?author2 .\n"
     + "?author1 foaf:name ?name1 . \n"
     # dimensions_y
-    + "?paper2 dc:creator ?author2;  a spb:Inproceedings . \n"
     + "?author2 foaf:name ?name2 . \n"
-
     + "}\n"
 )
 
@@ -36,6 +31,8 @@ def requestResponseToFusekiServer(url, query):
 
 # get result array
 # return s p o
+
+
 def getResultArray(response):
     responseSparqlArray = response['results']['bindings']
     for data in responseSparqlArray:
@@ -48,17 +45,30 @@ def getResultArray(response):
             node.append(d2)
         # relation
         rel = {"from": node.index(d1), "to": node.index(d2)}
-        if rel not in edge:
-            edge.append(rel)
+        # non-directed_graph
+        rel2 = {"from": node.index(d2), "to": node.index(d1)}
+        if d1 != d2:
+            if rel not in edge:
+                if rel2 not in edge:
+                    edge.append(rel)
+                    mrel = {
+                        "index": edge.index(rel),
+                        "o": data['paper1']['value']}
+                else:
+                    mrel = {
+                        "index": edge.index(rel2),
+                        "o": data['paper1']['value']}
+            else:
+                mrel = {"index": edge.index(rel), "o": data['paper1']['value']}
+            if mrel not in measureEdge:
+                measureEdge.append(mrel)
         # measure
         m1 = {"index": node.index(d1), "m": data['paper1']['value']}
         if m1 not in measure:
             measure.append(m1)
-        m2 = {"index": node.index(d2), "m": data['paper2']['value']}
+        m2 = {"index": node.index(d2), "m": data['paper1']['value']}
         if m2 not in measure:
             measure.append(m2)
-        mrel = {"index": edge.index(rel), "o": data['paper1']['value']}
-        measureEdge.append(mrel)
 
 
 def printResult(dicList):
@@ -70,7 +80,7 @@ def printResult(dicList):
 
 def testGroupedGraph():
     print("node :")
-    printResult(node)
+    print(node)
     print("measure :")
     measure.sort(key=lambda x: x['index'])
     printResult(measure)
@@ -87,12 +97,14 @@ url = 'http://localhost:3030/sp2b-500kt/query'
 # get together ??
 t1 = time.time()
 response = requestResponseToFusekiServer(url, query)
+t2 = time.time()
+elapsed_time = t2 - t1
+
+print(f"経過時間：{elapsed_time}")
 if response['results'] != []:
     getResultArray(response)
     t2 = time.time()
     elapsed_time = t2 - t1
 
     print(f"経過時間：{elapsed_time}")
-
-
-    # testGroupedGraph()
+    #testGroupedGraph()
